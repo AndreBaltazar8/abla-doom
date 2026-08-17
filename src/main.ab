@@ -13,6 +13,12 @@ fun main: int {
     } else if (requested == "test-vulkan") {
         mode = "test"
         backend = graphicsBackendVulkan
+    } else if (requested == "benchmark-opengl") {
+        mode = "benchmark"
+        backend = graphicsBackendOpenGl
+    } else if (requested == "benchmark-vulkan") {
+        mode = "benchmark"
+        backend = graphicsBackendVulkan
     }
     doomRun(mode, backend)
 }

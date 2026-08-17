@@ -379,6 +379,9 @@ fun doomRun(
     if (mode == "test") {
         maximumFrames = 4
         waitMilliseconds = 0
+    } else if (mode == "benchmark") {
+        maximumFrames = 300
+        waitMilliseconds = 0
     } else if (mode == "screenshot") maximumFrames = 180
 
     while (state.running && presented && state.frame < maximumFrames) {

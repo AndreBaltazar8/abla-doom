@@ -1,6 +1,6 @@
 PROJECT_DIR := $(abspath .)
 
-.PHONY: all build test screenshot check-abla-only clean
+.PHONY: all build test benchmark screenshot check-abla-only clean
 
 all: check-abla-only build
 
@@ -10,6 +10,9 @@ build:
 
 test: check-abla-only build
 	./tools/test.sh
+
+benchmark: check-abla-only build
+	./tools/benchmark.sh
 
 screenshot: build
 	./tools/screenshot.sh

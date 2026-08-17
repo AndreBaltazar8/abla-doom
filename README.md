@@ -27,6 +27,19 @@ Use W/S to move, A/D or the arrow keys to turn, and Escape to quit. Automatic
 selection prefers Vulkan and falls back to OpenGL; the smoke suite renders and
 presents the procedural scene through both explicit backends.
 
+Measure 300 unpaced, fully rendered and presented frames per backend with the X
+server already running, excluding compiler and X-server startup:
+
+```sh
+nix-shell --run 'make benchmark'
+```
+
+The benchmark reports measured frames per second instead of enforcing a
+machine-specific threshold. It uses Mesa's pinned software OpenGL and Vulkan
+drivers, so it is also a reproducible CPU-rendering stress test for the complete
+Abla path. The conservative development-host baseline and full methodology are
+recorded in [docs/performance.md](docs/performance.md).
+
 Regenerate the clean 320x200 proof screenshot from a real software-rendered run:
 
 ```sh
