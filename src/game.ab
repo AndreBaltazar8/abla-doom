@@ -310,12 +310,13 @@ fun doomRender(var pixels: PixelBuffer, state: DoomState): void {
 fun doomHandleEvent(var state: DoomState, event: WindowEvent): void {
     if (event.kind == windowEventCloseRequested) state.running = false
     else if (event.kind == windowEventKey) {
-        val pressed = event.second != 0
-        if (event.first == 9 && pressed) state.running = false
-        else if (event.first == 25) state.forward = pressed
-        else if (event.first == 39) state.backward = pressed
-        else if (event.first == 38 || event.first == 113) state.left = pressed
-        else if (event.first == 40 || event.first == 114) state.right = pressed
+        val pressed = event.keyPressed()
+        val key = event.key()
+        if (key == keyEscape && pressed) state.running = false
+        else if (key == keyW) state.forward = pressed
+        else if (key == keyS) state.backward = pressed
+        else if (key == keyA || key == keyLeft) state.left = pressed
+        else if (key == keyD || key == keyRight) state.right = pressed
     }
     return
 }
