@@ -2,8 +2,17 @@ import "abla/process/arguments"
 import "game.ab"
 
 fun main: int {
-    val mode = if (processArgumentCount() > 0)
+    val requested = if (processArgumentCount() > 0)
         processArgument(0)
     else "play"
-    doomRun(mode)
+    var mode = requested
+    var backend = graphicsBackendAuto
+    if (requested == "test-opengl") {
+        mode = "test"
+        backend = graphicsBackendOpenGl
+    } else if (requested == "test-vulkan") {
+        mode = "test"
+        backend = graphicsBackendVulkan
+    }
+    doomRun(mode, backend)
 }

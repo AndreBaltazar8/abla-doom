@@ -9,9 +9,10 @@ raycaster, input, and framebuffer are original procedural Abla code.
 ![Abla Doom running](screenshots/abla-doom.png)
 
 The renderer writes a reusable 320x200 affine RGBA8 `PixelBuffer`; Abla Graphics
-uploads it through a persistent OpenGL texture and full-screen `$glsl` program.
-Window creation and events use the direct Abla X11 protocol implementation.
-There is no C/C++/Rust implementation source, GLFW, SDL, or native project shim.
+presents the same frame through either a persistent OpenGL texture/full-screen
+`$glsl` program or a Vulkan staging-buffer/image-copy path. Window creation and
+events use the direct Abla X11 protocol implementation. There is no C/C++/Rust
+implementation source, GLFW, SDL, or native project shim.
 
 ## Run
 
@@ -22,9 +23,9 @@ nix-shell --run 'make test'
 nix-shell --run 'make build && ./build/abla-doom'
 ```
 
-Use W/S to move, A/D or the arrow keys to turn, and Escape to quit. The current
-vertical slice uses the OpenGL backend because common Vulkan `PixelBuffer`
-uploads are still being implemented in Abla Graphics.
+Use W/S to move, A/D or the arrow keys to turn, and Escape to quit. Automatic
+selection prefers Vulkan and falls back to OpenGL; the smoke suite renders and
+presents the procedural scene through both explicit backends.
 
 Regenerate the clean 320x200 proof screenshot from a real software-rendered run:
 

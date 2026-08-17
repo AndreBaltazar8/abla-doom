@@ -358,9 +358,12 @@ fun doomUpdate(var state: DoomState): void {
     return
 }
 
-fun doomRun(mode: string): int {
+fun doomRun(
+    mode: string,
+    backend: int = graphicsBackendAuto
+): int {
     val app = graphicsApplication(
-        GraphicsConfig(backend = graphicsBackendOpenGl),
+        GraphicsConfig(backend = backend),
         WindowConfig(
             title = "ABLA DOOM",
             width = doomWidth,
