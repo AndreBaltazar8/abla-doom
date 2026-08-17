@@ -1,0 +1,4 @@
+name = "abla-doom"
+version = "0.1.0"
+entry = "src/main.ab"
+nativeLibraries = ["vulkan", "X11", "EGL", "GL"]

@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  abla-doom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out Abla Doom
+        uses: actions/checkout@v6
+        with:
+          path: abla-doom
+
+      - name: Check out Abla Graphics
+        uses: actions/checkout@v6
+        with:
+          repository: AndreBaltazar8/abla-graphics
+          path: abla-graphics
+
+      - name: Check out the Abla compiler
+        uses: actions/checkout@v6
+        with:
+          repository: AndreBaltazar8/ablac
+          path: ablac
+          submodules: recursive
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bootstrap the Abla compiler
+        working-directory: ablac
+        run: nix-shell --run 'make ablac'
+
+      - name: Build and render Abla Doom
+        working-directory: abla-doom
+        run: |
+          nix-shell --run '
+            export VK_DRIVER_FILES="$ABLA_DOOM_LVP_ICD"
+            export __EGL_VENDOR_LIBRARY_FILENAMES="$ABLA_DOOM_EGL_VENDOR"
+            export LIBGL_DRIVERS_PATH="$ABLA_DOOM_DRI"
+            export LIBGL_ALWAYS_SOFTWARE=1
+            make test
+          '

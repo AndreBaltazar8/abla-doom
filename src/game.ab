@@ -1,0 +1,396 @@
+// An original procedural 2.5D homage rendered entirely in Abla.
+
+import "../../abla-graphics/src/graphics.ab"
+
+val doomWidth = 320
+val doomHeight = 200
+val doomFixed = 65536
+
+val doomMapRows = [
+    "1111111111111111",
+    "1000000000000001",
+    "1000000000000001",
+    "1000000000000001",
+    "1000222200333001",
+    "1000200200303001",
+    "1000200200303001",
+    "1000222200333001",
+    "1000000000000001",
+    "1000444000555001",
+    "1000404000505001",
+    "1000444000555001",
+    "1000000000000001",
+    "1000000000000001",
+    "1000000000000001",
+    "1111111111111111"
+]
+
+class DoomState(
+    var positionX: int,
+    var positionY: int,
+    var directionX: int,
+    var directionY: int,
+    var planeX: int,
+    var planeY: int,
+    var forward: bool,
+    var backward: bool,
+    var left: bool,
+    var right: bool,
+    var running: bool,
+    var frame: int
+)
+
+fun doomInitialState(): DoomState = DoomState(
+    graphicsScalar(17, 2) * doomFixed / graphicsScalarOne,
+    graphicsScalar(17, 2) * doomFixed / graphicsScalarOne,
+    0,
+    -doomFixed,
+    -43254,
+    0,
+    false,
+    false,
+    false,
+    false,
+    true,
+    0
+)
+
+fun doomAbsolute(value: int): int = if (value < 0) -value else value
+
+fun doomMapCell(x: int, y: int): int {
+    var result = 1
+    if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+        result = doomMapRows[y][x] - 48
+    }
+    result
+}
+
+fun doomWallRed(wall: int): int {
+    var value = 154
+    if (wall == 2) value = 154
+    else if (wall == 3) value = 52
+    else if (wall == 4) value = 172
+    else if (wall == 5) value = 104
+    value
+}
+
+fun doomWallGreen(wall: int): int {
+    var value = 34
+    if (wall == 2) value = 48
+    else if (wall == 3) value = 126
+    else if (wall == 4) value = 113
+    else if (wall == 5) value = 58
+    value
+}
+
+fun doomWallBlue(wall: int): int {
+    var value = 30
+    if (wall == 2) value = 34
+    else if (wall == 3) value = 66
+    else if (wall == 4) value = 35
+    else if (wall == 5) value = 126
+    value
+}
+
+fun doomRenderWorld(var pixels: PixelBuffer, state: DoomState): void {
+    var backgroundRow = 0
+    while (backgroundRow < 90) {
+        pixels.fillRectRgba8(
+            0,
+            backgroundRow,
+            doomWidth,
+            1,
+            12 + backgroundRow / 8,
+            10 + backgroundRow / 10,
+            18 + backgroundRow / 6
+        )
+        var floorShade = 28 + backgroundRow / 2
+        if ((backgroundRow + 5) / 12 * 12 == backgroundRow + 5) {
+            floorShade = floorShade + 18
+        }
+        pixels.fillRectRgba8(
+            0,
+            90 + backgroundRow,
+            doomWidth,
+            1,
+            floorShade,
+            floorShade * 4 / 5,
+            floorShade * 2 / 3
+        )
+        backgroundRow = backgroundRow + 1
+    }
+    var floorColumn = 0
+    while (floorColumn <= doomWidth) {
+        var floorRow = 0
+        while (floorRow < 90) {
+            val floorX = doomWidth / 2 +
+                (floorColumn - doomWidth / 2) * floorRow / 90
+            if (floorX >= 0 && floorX < doomWidth) {
+                pixels.setRgba8(floorX, 90 + floorRow, 67, 50, 39)
+            }
+            floorRow = floorRow + 1
+        }
+        floorColumn = floorColumn + 32
+    }
+    var x = 0
+    while (x < doomWidth) {
+        val cameraX = 2 * x * doomFixed / doomWidth - doomFixed
+        val rayX = state.directionX + state.planeX * cameraX / doomFixed
+        val rayY = state.directionY + state.planeY * cameraX / doomFixed
+        var mapX = state.positionX / doomFixed
+        var mapY = state.positionY / doomFixed
+        val deltaX = if (rayX == 0)
+            1073741824
+        else doomAbsolute(doomFixed * doomFixed / rayX)
+        val deltaY = if (rayY == 0)
+            1073741824
+        else doomAbsolute(doomFixed * doomFixed / rayY)
+        var stepX = 1
+        var stepY = 1
+        var sideX = 0
+        var sideY = 0
+        if (rayX < 0) {
+            stepX = -1
+            sideX = (state.positionX - mapX * doomFixed) *
+                deltaX / doomFixed
+        } else sideX = ((mapX + 1) * doomFixed - state.positionX) *
+            deltaX / doomFixed
+        if (rayY < 0) {
+            stepY = -1
+            sideY = (state.positionY - mapY * doomFixed) *
+                deltaY / doomFixed
+        } else sideY = ((mapY + 1) * doomFixed - state.positionY) *
+            deltaY / doomFixed
+
+        var wall = 0
+        var side = 0
+        var steps = 0
+        while (wall == 0 && steps < 64) {
+            if (sideX < sideY) {
+                sideX = sideX + deltaX
+                mapX = mapX + stepX
+                side = 0
+            } else {
+                sideY = sideY + deltaY
+                mapY = mapY + stepY
+                side = 1
+            }
+            wall = doomMapCell(mapX, mapY)
+            steps = steps + 1
+        }
+        var distance = if (side == 0)
+            sideX - deltaX
+        else sideY - deltaY
+        if (distance < 1) distance = 1
+        var lineHeight = doomHeight * doomFixed / distance
+        if (lineHeight > doomHeight * 4) lineHeight = doomHeight * 4
+        var drawStart = doomHeight / 2 - lineHeight / 2
+        var drawEnd = doomHeight / 2 + lineHeight / 2
+        if (drawStart < 0) drawStart = 0
+        if (drawEnd > 180) drawEnd = 180
+        var red = doomWallRed(wall)
+        var green = doomWallGreen(wall)
+        var blue = doomWallBlue(wall)
+        var brightness = 55 + 170 * doomFixed /
+            (distance + doomFixed)
+        if (side == 1) {
+            brightness = brightness * 3 / 4
+        }
+        if (((x / 4 + mapX + mapY) & 1) == 0) {
+            brightness = brightness * 7 / 8
+        }
+        red = red * brightness / 255
+        green = green * brightness / 255
+        blue = blue * brightness / 255
+        pixels.fillRectRgba8(
+            x,
+            drawStart,
+            1,
+            drawEnd - drawStart,
+            red,
+            green,
+            blue
+        )
+        x = x + 1
+    }
+    return
+}
+
+fun doomGlyph(character: int): string {
+    var glyph = "00000000000000000000000000000000000"
+    if (character == 65) glyph = "01110100011000111111100011000110001"
+    else if (character == 66) glyph = "11110100011000111110100011000111110"
+    else if (character == 68) glyph = "11110100011000110001100011000111110"
+    else if (character == 69) glyph = "11111100001000011110100001000011111"
+    else if (character == 72) glyph = "10001100011000111111100011000110001"
+    else if (character == 76) glyph = "10000100001000010000100001000011111"
+    else if (character == 77) glyph = "10001110111010110101100011000110001"
+    else if (character == 79) glyph = "01110100011000110001100011000101110"
+    else if (character == 82) glyph = "11110100011000111110101001001010001"
+    else if (character == 84) glyph = "11111001000010000100001000010000100"
+    else if (character == 48) glyph = "01110100011001110101110011000101110"
+    else if (character == 49) glyph = "00100011000010000100001000010001110"
+    else if (character == 53) glyph = "11111100001000011110000010000111110"
+    glyph
+}
+
+fun doomDrawText(
+    var pixels: PixelBuffer,
+    text: string,
+    x: int,
+    y: int,
+    scale: int,
+    red: int,
+    green: int,
+    blue: int
+): void {
+    var character = 0
+    while (character < text.size) {
+        val glyph = doomGlyph(text[character])
+        var bit = 0
+        while (bit < 35) {
+            if (glyph[bit] == 49) {
+                pixels.fillRectRgba8(
+                    x + character * 6 * scale + (bit - bit / 5 * 5) * scale,
+                    y + bit / 5 * scale,
+                    scale,
+                    scale,
+                    red,
+                    green,
+                    blue
+                )
+            }
+            bit = bit + 1
+        }
+        character = character + 1
+    }
+    return
+}
+
+fun doomRenderHud(var pixels: PixelBuffer, state: DoomState): void {
+    pixels.fillRectRgba8(0, 180, doomWidth, 20, 20, 18, 17)
+    pixels.fillRectRgba8(0, 180, doomWidth, 2, 152, 39, 31)
+    doomDrawText(pixels, "HEALTH 100", 8, 184, 2, 221, 205, 172)
+    doomDrawText(pixels, "ARMOR 050", 204, 184, 2, 221, 205, 172)
+
+    var row = 0
+    while (row < 44) {
+        val half = 9 + row / 3
+        pixels.fillRectRgba8(
+            doomWidth / 2 - half,
+            179 - row,
+            half * 2,
+            1,
+            83 + row,
+            74 + row / 2,
+            65 + row / 3
+        )
+        row = row + 1
+    }
+    pixels.fillRectRgba8(154, 112, 12, 49, 47, 43, 40)
+    pixels.fillRectRgba8(157, 112, 4, 49, 119, 103, 87)
+    pixels.fillRectRgba8(151, 110, 18, 6, 64, 58, 52)
+    pixels.fillRectRgba8(154, 108, 12, 4, 156, 137, 111)
+    pixels.fillRectRgba8(150, 184, 20, 12, 74, 47, 38)
+    pixels.fillRectRgba8(154, 187, 4, 3, 230, 207, 174)
+    pixels.fillRectRgba8(163, 187, 4, 3, 230, 207, 174)
+    pixels.fillRectRgba8(157, 193, 7, 2, 153, 39, 32)
+    pixels.fillRectRgba8(158, 96, 4, 1, 226, 214, 180)
+    pixels.fillRectRgba8(159, 95, 2, 3, 226, 214, 180)
+    doomDrawText(pixels, "ABLA DOOM", 106, 7, 3, 188, 38, 31)
+    return
+}
+
+fun doomRender(var pixels: PixelBuffer, state: DoomState): void {
+    doomRenderWorld(pixels, state)
+    doomRenderHud(pixels, state)
+    return
+}
+
+fun doomHandleEvent(var state: DoomState, event: WindowEvent): void {
+    if (event.kind == windowEventCloseRequested) state.running = false
+    else if (event.kind == windowEventKey) {
+        val pressed = event.second != 0
+        if (event.first == 9 && pressed) state.running = false
+        else if (event.first == 25) state.forward = pressed
+        else if (event.first == 39) state.backward = pressed
+        else if (event.first == 38 || event.first == 113) state.left = pressed
+        else if (event.first == 40 || event.first == 114) state.right = pressed
+    }
+    return
+}
+
+fun doomRotate(var state: DoomState, sine: int): void {
+    val cosine = 65446
+    val oldDirectionX = state.directionX
+    state.directionX = oldDirectionX * cosine / doomFixed -
+        state.directionY * sine / doomFixed
+    state.directionY = oldDirectionX * sine / doomFixed +
+        state.directionY * cosine / doomFixed
+    val oldPlaneX = state.planeX
+    state.planeX = oldPlaneX * cosine / doomFixed -
+        state.planeY * sine / doomFixed
+    state.planeY = oldPlaneX * sine / doomFixed +
+        state.planeY * cosine / doomFixed
+    return
+}
+
+fun doomUpdate(var state: DoomState): void {
+    val movement = 3500
+    var direction = 0
+    if (state.forward) direction = 1
+    if (state.backward) direction = -1
+    if (direction != 0) {
+        val nextX = state.positionX +
+            state.directionX * movement / doomFixed * direction
+        val nextY = state.positionY +
+            state.directionY * movement / doomFixed * direction
+        if (doomMapCell(nextX / doomFixed, state.positionY / doomFixed) == 0) {
+            state.positionX = nextX
+        }
+        if (doomMapCell(state.positionX / doomFixed, nextY / doomFixed) == 0) {
+            state.positionY = nextY
+        }
+    }
+    if (state.left) doomRotate(state, 3430)
+    if (state.right) doomRotate(state, -3430)
+    state.frame = state.frame + 1
+    return
+}
+
+fun doomRun(mode: string): int {
+    val app = graphicsApplication(
+        GraphicsConfig(backend = graphicsBackendOpenGl),
+        WindowConfig(
+            title = "ABLA DOOM",
+            width = doomWidth,
+            height = doomHeight,
+            resizable = false
+        )
+    )
+    val pixels = pixelBuffer(doomWidth, doomHeight)
+    val state = doomInitialState()
+    var presented = app.valid() && pixels.valid()
+    var maximumFrames = 2147483647
+    var waitMilliseconds = 16
+    if (mode == "test") {
+        maximumFrames = 4
+        waitMilliseconds = 0
+    } else if (mode == "screenshot") maximumFrames = 180
+
+    while (state.running && presented && state.frame < maximumFrames) {
+        var event = app.pollEvent(0)
+        while (event.happened()) {
+            doomHandleEvent(state, event)
+            event = app.pollEvent(0)
+        }
+        doomUpdate(state)
+        doomRender(pixels, state)
+        presented = app.presentPixels(pixels)
+        if (waitMilliseconds > 0) app.pollEvent(waitMilliseconds)
+    }
+    if (presented && mode == "test" &&
+        pixels.rgba8(160, 100) >= 0) 42
+    else if (presented) 0
+    else 1
+}

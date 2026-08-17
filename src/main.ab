@@ -1,0 +1,9 @@
+import "abla/process/arguments"
+import "game.ab"
+
+fun main: int {
+    val mode = if (processArgumentCount() > 0)
+        processArgument(0)
+    else "play"
+    doomRun(mode)
+}
