@@ -12,7 +12,8 @@ The renderer writes a reusable 320x200 affine RGBA8 `PixelBuffer`; Abla Graphics
 presents the same frame through either a persistent OpenGL texture/full-screen
 `$glsl` program or a Vulkan staging-buffer/image-copy path. Window creation and
 events use the direct Abla X11 protocol implementation. There is no C/C++/Rust
-implementation source, GLFW, SDL, or native project shim.
+implementation source, GLFW, SDL, or native project shim. The game requests an
+Abla-created transparent core-X11 cursor so the play window remains clean.
 
 ## Run
 

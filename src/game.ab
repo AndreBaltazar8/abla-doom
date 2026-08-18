@@ -369,7 +369,8 @@ fun doomRun(
             title = "ABLA DOOM",
             width = doomWidth,
             height = doomHeight,
-            resizable = false
+            resizable = false,
+            cursorVisible = false
         )
     )
     val pixels = pixelBuffer(doomWidth, doomHeight)
