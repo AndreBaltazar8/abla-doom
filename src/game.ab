@@ -41,8 +41,8 @@ class DoomState(
 )
 
 fun doomInitialState(): DoomState = DoomState(
-    graphicsScalar(17, 2) * doomFixed / graphicsScalarOne,
-    graphicsScalar(17, 2) * doomFixed / graphicsScalarOne,
+    17 * doomFixed / 2,
+    17 * doomFixed / 2,
     0,
     -doomFixed,
     -43254,
