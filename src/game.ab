@@ -374,19 +374,22 @@ fun doomRun(
         )
     )
     val pixels = pixelBuffer(doomWidth, doomHeight)
+    val pacer = graphicsFramePacer(60)
     val state = doomInitialState()
     var presented = app.valid() && pixels.valid()
+    var paced = pacer.valid()
     var maximumFrames = 2147483647
-    var waitMilliseconds = 16
+    var pacingEnabled = true
     if (mode == "test") {
         maximumFrames = 4
-        waitMilliseconds = 0
+        pacingEnabled = false
     } else if (mode == "benchmark") {
         maximumFrames = 300
-        waitMilliseconds = 0
+        pacingEnabled = false
     } else if (mode == "screenshot") maximumFrames = 180
 
-    while (state.running && presented && state.frame < maximumFrames) {
+    while (state.running && presented && paced &&
+        state.frame < maximumFrames) {
         var event = app.pollEvent(0)
         while (event.happened()) {
             doomHandleEvent(state, event)
@@ -395,10 +398,10 @@ fun doomRun(
         doomUpdate(state)
         doomRender(pixels, state)
         presented = app.presentPixels(pixels)
-        if (waitMilliseconds > 0) app.pollEvent(waitMilliseconds)
+        if (pacingEnabled && presented) paced = pacer.wait()
     }
-    if (presented && mode == "test" &&
+    if (presented && paced && mode == "test" &&
         pixels.rgba8(160, 100) >= 0) 42
-    else if (presented) 0
+    else if (presented && paced) 0
     else 1
 }

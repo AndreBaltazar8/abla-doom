@@ -14,6 +14,8 @@ presents the same frame through either a persistent OpenGL texture/full-screen
 events use the direct Abla X11 protocol implementation. There is no C/C++/Rust
 implementation source, GLFW, SDL, or native project shim. The game requests an
 Abla-created transparent core-X11 cursor so the play window remains clean.
+Interactive play uses Abla Graphics' drift-corrected 60 fps monotonic pacer;
+test and benchmark modes remain deliberately unpaced.
 
 ## Run
 
