@@ -11,14 +11,27 @@ xvfb-run -a -s "-screen 0 320x200x24 -noreset" sh -c '
     "$app" screenshot &
     app_pid=$!
     attempt=0
+    window_id=
     while [ "$attempt" -lt 40 ]; do
-        if xwininfo -root -tree 2>/dev/null | rg -q "ABLA DOOM"; then
+        window_id=$(xwininfo -root -tree 2>/dev/null | sed -n \
+            '\''s/^[[:space:]]*\(0x[0-9a-fA-F]*\) "ABLA DOOM".*/\1/p'\'' | \
+            head -n 1)
+        if [ -n "$window_id" ]; then
             break
         fi
         sleep 0.05
         attempt=$((attempt + 1))
     done
-    magick import -window root "$output"
+    if [ -z "$window_id" ]; then
+        printf "%s\n" "could not find the ABLA DOOM window" >&2
+        kill "$app_pid" 2>/dev/null || true
+        wait "$app_pid" 2>/dev/null || true
+        exit 1
+    fi
+    # Window creation precedes the first graphics presentation. Give the
+    # paced screenshot mode several frames to render before reading pixels.
+    sleep 0.3
+    magick import -window "$window_id" "$output"
     wait "$app_pid"
 ' sh "$project_root/build/abla-doom" "$output"
 

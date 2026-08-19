@@ -49,6 +49,10 @@ Regenerate the clean 320x200 proof screenshot from a real software-rendered run:
 nix-shell --run 'make screenshot'
 ```
 
+The capture gate resolves the `ABLA DOOM` client window by its X identifier,
+waits for presented frames, captures that window alone, and rejects any result
+that is not exactly 320x200.
+
 ## License
 
 Abla Doom is released under the MIT License. “DOOM” is a trademark of its
