@@ -1,6 +1,11 @@
 // An original procedural 2.5D homage rendered entirely in Abla.
 
 import "../../abla-graphics/src/graphics.ab"
+import "../../abla-graphics/src/pixels.ab"
+import "../../abla-graphics/src/window.ab"
+import "../../abla-graphics/src/core.ab"
+import "../../abla-graphics/src/application.ab"
+import "../../abla-graphics/src/time.ab"
 
 val doomWidth = 320
 val doomHeight = 200

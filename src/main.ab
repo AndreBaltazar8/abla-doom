@@ -1,5 +1,6 @@
 import "abla/process/arguments"
 import "game.ab"
+import "../../abla-graphics/src/core.ab"
 
 fun main: int {
     val requested = if (processArgumentCount() > 0)
