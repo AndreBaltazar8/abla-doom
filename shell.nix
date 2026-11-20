@@ -4,15 +4,22 @@
     sha256 = "02rf59xj2v1ml7v35x4j64ax1fb7xx96ld7va6rifyxazmwsr4rb";
   }) {} }:
 
+let
+  # llc/opt/clang/lld must read the bitcode ablac writes, so they come from ablac's own pinned nixpkgs (LLVM 23,
+  # the binary-cached one; nix/llvm.nix only rebuilds libllvm for Xtensa). ablac sits beside this checkout, here and
+  # in CI. The graphics libraries stay on this file's pin.
+  ablacPkgs = import ../ablac/nix/nixpkgs.nix;
+  llvm = ablacPkgs.llvmPackages_23;
+in
 pkgs.mkShell {
   packages = with pkgs; [
     gcc
     gnumake
     imagemagick
     libglvnd
-    llvmPackages.llvm
-    llvmPackages.clang
-    llvmPackages.lld
+    llvm.llvm
+    llvm.clang
+    llvm.lld
     mesa
     openssl
     ripgrep
